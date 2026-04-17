@@ -1,0 +1,46 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: civicops
+      POSTGRES_PASSWORD: civicops
+      POSTGRES_DB: civicops
+    volumes:
+      - civicops_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U civicops -d civicops"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://civicops:civicops@postgres:5432/civicops
+      BIND_ADDR: 0.0.0.0:8080
+      SESSION_TTL_SECS: "28800"
+      KEK_PATH: /var/civicops/kek.bin
+      BLOB_DIR: /var/civicops/blobs
+      OUTBOX_EXPORT_DIR: /var/civicops/outbox
+      RUST_LOG: info
+    volumes:
+      - civicops_blobs:/var/civicops/blobs
+      - civicops_outbox:/var/civicops/outbox
+      - civicops_kek:/var/civicops
+    ports:
+      - "8080:8080"
+
+volumes:
+  civicops_pgdata:
+  civicops_blobs:
+  civicops_outbox:
+  civicops_kek:
+
+networks:
+  default:
+    driver: bridge

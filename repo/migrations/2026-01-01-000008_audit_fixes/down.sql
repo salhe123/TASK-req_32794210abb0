@@ -1,0 +1,16 @@
+ALTER TABLE lost_found_items DROP CONSTRAINT IF EXISTS lost_found_category_allowed;
+ALTER TABLE packages DROP COLUMN IF EXISTS included_items;
+ALTER TABLE outbox_deliveries DROP CONSTRAINT IF EXISTS outbox_channel_allowed;
+ALTER TABLE outbox_deliveries DROP COLUMN IF EXISTS channel;
+ALTER TABLE outbox_deliveries DROP COLUMN IF EXISTS to_address;
+ALTER TABLE outbox_deliveries DROP COLUMN IF EXISTS facility_id;
+DROP INDEX IF EXISTS idx_outbox_facility;
+DROP INDEX IF EXISTS idx_outbox_channel;
+DROP INDEX IF EXISTS idx_lost_found_created_at;
+DROP INDEX IF EXISTS idx_assets_created_at;
+DROP INDEX IF EXISTS idx_assets_asset_label;
+DROP INDEX IF EXISTS idx_packages_created_at;
+DROP INDEX IF EXISTS idx_notifications_created_at;
+DROP INDEX IF EXISTS idx_volunteers_facility;
+DROP INDEX IF EXISTS idx_volunteers_created_at;
+DELETE FROM permissions WHERE code IN ('packages.read','volunteers.read','lost_found.read','assets.read','notifications.read');

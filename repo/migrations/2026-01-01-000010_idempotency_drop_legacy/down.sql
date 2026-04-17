@@ -1,0 +1,4 @@
+-- Restoring the legacy uniqueness would conflict with the composite index
+-- added in migration 000009 once any row reuses a request_id across
+-- endpoints. Leaving this down.sql empty — the migration is effectively
+-- forward-only.
