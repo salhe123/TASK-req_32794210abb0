@@ -31,9 +31,15 @@ fn unique_label_contention_produces_one_winner() {
         let o = others.clone();
         handles.push(std::thread::spawn(move || {
             let c = client();
+            // Each racer must carry its own fresh X-Request-Id so the strict
+            // idempotency gate treats every request as an independent write.
+            // Otherwise 23 of 24 would see the same cached body and the unique
+            // (facility_id, asset_label) contention would never exercise.
+            let rid = uuid::Uuid::new_v4().to_string();
             let r = c
                 .post(format!("{}/api/assets", common::base_url()))
                 .bearer_auth(&t)
+                .header("X-Request-Id", &rid)
                 .json(&json!({
                     "facilityId": f,
                     "assetLabel": l,
