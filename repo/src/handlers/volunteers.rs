@@ -104,10 +104,10 @@ fn serialize_volunteer(v: &Volunteer, ctx: &RequestContext) -> Value {
             if show_gov {
                 match crypto::decrypt(enc) {
                     Ok(bytes) => Value::String(String::from_utf8_lossy(&bytes).to_string()),
-                    Err(_) => Value::String(crypto::mask_last4(last4)),
+                    Err(_) => Value::String(format!("*********{}", last4)),
                 }
             } else {
-                Value::String(crypto::mask_last4(last4))
+                Value::String(format!("*********{}", last4))
             }
         }
         _ => Value::Null,
@@ -148,10 +148,10 @@ fn serialize_qual(q: &Qualification, ctx: &RequestContext) -> Value {
             if show_cert {
                 match crypto::decrypt(enc) {
                     Ok(bytes) => Value::String(String::from_utf8_lossy(&bytes).to_string()),
-                    Err(_) => Value::String(crypto::mask_last4(last4)),
+                    Err(_) => Value::String(format!("*********{}", last4)),
                 }
             } else {
-                Value::String(crypto::mask_last4(last4))
+                Value::String(format!("*********{}", last4))
             }
         }
         _ => Value::Null,
