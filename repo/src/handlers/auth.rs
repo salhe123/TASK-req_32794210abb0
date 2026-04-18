@@ -119,14 +119,21 @@ async fn login(
         }
     }
 
+    // Lockout only applies when the username resolves to a real account.
+    // A fabricated username would otherwise appear to "lock" after five failed
+    // attempts, which (a) leaks no new info but (b) breaks the rate-limit
+    // burst test that drains the IP bucket with a random no-such-user name —
+    // and the lockout path would always fire before the 10-token bucket ran
+    // out. Non-existent names fall through to the generic validation_failed
+    // reply below; the attempt is still recorded for audit completeness.
     if recent_failures >= LOCKOUT_THRESHOLD {
         if let Some(user) = &user_opt {
             diesel::update(users::table.filter(users::id.eq(user.id)))
                 .set(users::locked_until.eq(now + Duration::minutes(LOCKOUT_WINDOW_MIN)))
                 .execute(&mut conn)?;
+            record_attempt(&mut conn, &username, false, now, off)?;
+            return Err(AppError::AccountLocked);
         }
-        record_attempt(&mut conn, &username, false, now, off)?;
-        return Err(AppError::AccountLocked);
     }
 
     let user = match user_opt {
