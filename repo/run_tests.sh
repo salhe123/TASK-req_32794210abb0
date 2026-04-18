@@ -102,9 +102,16 @@ ENV CARGO_BUILD_JOBS=1
 # /usr/local/cargo/registry so the test container can build on the
 # --internal docker network without reaching crates.io.
 WORKDIR /prefetch
-COPY Cargo.toml ./
+# Copy Cargo.lock too — the test container runs with --offline on the
+# --internal docker network, so the prefetched registry cache must match
+# the exact versions the repo's Cargo.lock pins (e.g. actix-http 3.12.0,
+# not the latest 3.12.1). Without --locked here, cargo would resolve to
+# the latest compatible versions and leave the cache out of sync with the
+# workspace's committed lock, causing offline "attempting to make an HTTP
+# request" errors at test time.
+COPY Cargo.toml Cargo.lock ./
 RUN mkdir -p src tests && echo 'fn main() {}' > src/main.rs && \\
-    cargo fetch --locked || cargo fetch
+    cargo fetch --locked
 $([ "$SKIP_COVERAGE" = "0" ] && echo 'RUN cargo install cargo-tarpaulin --locked || true')
 WORKDIR /work
 EOF
