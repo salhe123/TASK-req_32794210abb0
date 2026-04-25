@@ -1,5 +1,7 @@
 # CivicOps
 
+**Project Type:** backend
+
 An offline-capable backend service for a local civic organization. It covers
 lost-and-found intake/review, the full asset lifecycle state machine, volunteer
 qualifications with encrypted sensitive fields, photography packages with
@@ -75,6 +77,55 @@ within containers. You must have the following installed:
    ```bash
    docker-compose down -v
    ```
+
+## Verification (Required)
+
+Use the following sequence to confirm the system is working end-to-end.
+
+1. **Liveness and readiness checks**
+   ```bash
+   curl -s http://localhost:8080/health
+   curl -s http://localhost:8080/api/health/ready
+   ```
+   Expected:
+   - `/health` returns JSON with `"status":"ok"`.
+   - `/api/health/ready` returns JSON with `"status":"ready"` and `"db":"ok"`.
+
+2. **Login and capture token (authenticated API proof)**
+   ```bash
+   RID=$(uuidgen)
+   TOKEN=$(curl -s http://localhost:8080/api/auth/login \
+     -H "Content-Type: application/json" \
+     -H "X-Request-Id: ${RID}" \
+     -d '{"username":"admin","password":"ChangeMeSoon1234"}' | \
+     sed -n 's/.*"token":"\([^"]*\)".*/\1/p')
+   echo "$TOKEN"
+   ```
+   Expected:
+   - A non-empty bearer token is printed.
+   - Login response contains `sessionId`, `userId`, and `expiresAt`.
+
+3. **Call a protected endpoint with the token**
+   ```bash
+   curl -s http://localhost:8080/api/auth/session \
+     -H "Authorization: Bearer ${TOKEN}"
+   ```
+   Expected:
+   - HTTP `200` response body includes `username`, `roles`, and `permissions`.
+
+4. **Authorization sanity check (negative case)**
+   ```bash
+   curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/api/auth/session
+   ```
+   Expected:
+   - HTTP status `401` without bearer token.
+
+5. **Metrics endpoint responds**
+   ```bash
+   curl -s http://localhost:8080/api/metrics
+   ```
+   Expected:
+   - JSON payload includes `requestsTotal` and `errorsTotal`.
 
 ### API Surface
 
